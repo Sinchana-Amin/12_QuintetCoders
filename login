@@ -1,155 +1,243 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent">
+package com.quintus.labs.grocerystore.fragment;
 
-    <LinearLayout
-        android:id="@+id/login_layout" n
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-        android:orientation="vertical"
-        android:padding="20dp">
+import android.annotation.SuppressLint;
+import android.content.Context;
+import android.content.Intent;
+import android.content.res.ColorStateList;
+import android.content.res.XmlResourceParser;
+import android.os.Bundle;
+import android.os.Vibrator;
+import android.text.InputType;
+import android.text.method.HideReturnsTransformationMethod;
+import android.text.method.PasswordTransformationMethod;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
+import android.widget.CompoundButton.OnCheckedChangeListener;
+import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+import android.widget.Toast;
 
-        <androidx.cardview.widget.CardView
-            android:layout_width="100dp"
-            android:layout_height="100dp"
-            android:layout_gravity="center_horizontal"
-            app:cardCornerRadius="50dp">
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
 
-            <ImageView
-                android:layout_width="70dp"
-                android:layout_height="70dp"
-                android:layout_-gravity="center_horizontal"
-                android:layout_marginTop="@dimen/margin_15dp"
-                android:src="@drawable/logo" />
-        </androidx.cardview.widget.CardView>
+import com.google.gson.Gson;
+import com.quintus.labs.grocerystore.R;
+import com.quintus.labs.grocerystore.activity.MainActivity;
+import com.quintus.labs.grocerystore.api.clients.RestClient;
+import com.quintus.labs.grocerystore.model.User;
+import com.quintus.labs.grocerystore.model.UserResult;
+import com.quintus.labs.grocerystore.util.CustomToast;
+import com.quintus.labs.grocerystore.util.Utils;
+import com.quintus.labs.grocerystore.util.localstorage.LocalStorage;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
+public class LoginFragment extends Fragment implements OnClickListener {
+    private static View view;
+
+    private static EditText mobile, password;
+    private static Button loginButton;
+    private static TextView forgotPassword, signUp;
+    private static CheckBox show_hide_password;
+    private static LinearLayout loginLayout;
+    private static Animation shakeAnimation;
+    private static FragmentManager fragmentManager;
+    Gson gson = new Gson();
+    View progress;
+    LocalStorage localStorage;
+    String userString;
+    User user;
+
+    public LoginFragment() {
+
+    }
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        view = inflater.inflate(R.layout.login_layout, container, false);
+        initViews();
+        setListeners();
+        return view;
+    }
+
+   
+    private void initViews() {
+        fragmentManager = getActivity().getSupportFragmentManager();
+        progress = view.findViewById(R.id.progress_bar);
+        mobile = view.findViewById(R.id.login_mobile);
+        password = view.findViewById(R.id.login_password);
+        loginButton = view.findViewById(R.id.loginBtn);
+        forgotPassword = view.findViewById(R.id.forgot_password);
+        signUp = view.findViewById(R.id.createAccount);
+        show_hide_password = view
+                .findViewById(R.id.show_hide_password);
+        loginLayout = view.findViewById(R.id.login_layout);
+
+        localStorage = new LocalStorage(getContext());
+        String userString = localStorage.getUserLogin();
+        Gson gson = new Gson();
+        userString = localStorage.getUserLogin();
+        user = gson.fromJson(userString, User.class);
+        Log.d("User", userString);
+       
+        shakeAnimation = AnimationUtils.loadAnimation(getActivity(),
+                R.anim.shake);
+        
+        @SuppressLint("ResourceType") XmlResourceParser xrp = getResources().getXml(R.drawable.text_selector);
+        try {
+            ColorStateList csl = ColorStateList.createFromXml(getResources(),
+                    xrp);
+
+            forgotPassword.setTextColor(csl);
+            show_hide_password.setTextColor(csl);
+            signUp.setTextColor(csl);
+        } catch (Exception e) {
+        }
+    }
+    
+    private void setListeners() {
+        loginButton.setOnClickListener(this);
+        forgotPassword.setOnClickListener(this);
+        signUp.setOnClickListener(this);
+        
+        show_hide_password
+                .setOnCheckedChangeListener(new OnCheckedChangeListener() {
+
+                    @Override
+                    public void onCheckedChanged(CompoundButton button,
+                                                 boolean isChecked) {
+
+                        if (isChecked) {
+
+                            show_hide_password.setText(R.string.hide_pwd);
+                           
+                            password.setInputType(InputType.TYPE_CLASS_TEXT);
+                            password.setTransformationMethod(HideReturnsTransformationMethod
+                                    .getInstance());
+                        } else {
+                            show_hide_password.setText(R.string.show_pwd);
+                            // checkbox
+                            // text
+
+                            password.setInputType(InputType.TYPE_CLASS_TEXT
+                                    | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+                            password.setTransformationMethod(PasswordTransformationMethod
+                                    .getInstance());
+
+                        }
+
+                    }
+                });
+    }
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.loginBtn:
+                checkValidation();
+                break;
+
+            case R.id.forgot_password:
+
+                
+                fragmentManager
+                        .beginTransaction()
+                        .setCustomAnimations(R.anim.right_enter, R.anim.left_out)
+                        .replace(R.id.frameContainer,
+                                new ForgotPassword_Fragment(),
+                                Utils.ForgotPassword_Fragment).commit();
+                break;
+            case R.id.createAccount:
+
+                
+                fragmentManager
+                        .beginTransaction()
+                        .setCustomAnimations(R.anim.right_enter, R.anim.left_out)
+                        .replace(R.id.frameContainer, new SignUpFragment(),
+                                Utils.SignUp_Fragment).commit();
+                break;
+        }
+
+    }
+    
+    private void checkValidation() {
+        final String getMobile = mobile.getText().toString();
+        final String getPassword = password.getText().toString();
+
+        
+        if (getMobile.equals("") || getMobile.length() == 0
+                || getPassword.equals("") || getPassword.length() == 0) {
+            loginLayout.startAnimation(shakeAnimation);
+            new CustomToast().Show_Toast(getActivity(), view,
+                    "Enter both credentials.");
+            vibrate(200);
+        } else {
+            user = new User(getMobile, getPassword);
+            login(user);
+        }
+    }
+
+    private void login(User user) {
+        showProgressDialog();
+        Call<UserResult> call = RestClient.getRestService(getContext()).login(user);
+        call.enqueue(new Callback<UserResult>() {
+            @Override
+            public void onResponse(Call<UserResult> call, Response<UserResult> response) {
+
+                Log.d("Response :=>", response.body() + "");
+                if (response != null) {
+
+                    UserResult userResult = response.body();
+                    if (userResult.getCode() == 200) {
+                        String userString = gson.toJson(userResult.getUser());
+                        localStorage.createUserLoginSession(userString);
+                        Toast.makeText(getContext(), userResult.getStatus(), Toast.LENGTH_LONG).show();
+                        startActivity(new Intent(getContext(), MainActivity.class));
+                        getActivity().finish();
+                    } else {
+                        new CustomToast().Show_Toast(getActivity(), view,
+                                userResult.getStatus());
+                    }
+
+                } else {
+                    new CustomToast().Show_Toast(getActivity(), view,
+                            "Please Enter Correct Data");
+                }
+
+                hideProgressDialog();
+            }
+
+            @Override
+            public void onFailure(Call<UserResult> call, Throwable t) {
+                Log.d("Error==> ", t.getMessage());
+                hideProgressDialog();
+            }
+        });
+    }
+
+    public void vibrate(int duration) {
+        Vibrator vibs = (Vibrator) getActivity().getSystemService(Context.VIBRATOR_SERVICE);
+        vibs.vibrate(duration);
+    }
 
 
-        <com.quintus.labs.grocerystore.adapter.customfonts.MyTextViewOleoScriptBold
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="30dp"
-            android:baselineAligned="false"
-            android:gravity="center"
-            android:padding="5dp"
-            android:text="@string/login"
-            android:textColor="@color/colorPrimary"
-            android:textSize="35sp"
-            android:textStyle="bold" />
+    private void hideProgressDialog() {
+        progress.setVisibility(View.GONE);
+    }
 
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <EditText
-                android:id="@+id/login_mobile"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:background="@android:color/transparent"
-                android:digits="0123456789"
-                android:drawablePadding="8dp"
-                android:gravity="center_vertical"
-                android:hint="@string/mobileNumber"
-                android:inputType="number"
-                android:maxLines="10"
-                android:padding="10dp"
-                android:singleLine="true"
-                android:textColor="@color/black"
-                android:textColorHint="@color/yellow"
-                android:textSize="16sp" />
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <View
-            android:layout_width="fill_parent"
-            android:layout_height="2px"
-            android:background="@color/colorPrimaryDark" />
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="7dp"
-            app:passwordToggleEnabled="true">
-
-            <EditText
-                android:id="@+id/login_password"
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:background="@android:color/transparent"
-                android:drawablePadding="8dp"
-                android:gravity="center_vertical"
-                android:hint="@string/passowrd"
-                android:inputType="textPassword"
-                android:padding="10dp"
-                android:singleLine="true"
-                android:textColor="@color/black"
-                android:textColorHint="@color/yellow"
-                android:textSize="16sp" />
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="2px"
-            android:background="@color/colorPrimaryDark" />
-
-        <LinearLayout
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:paddingTop="8dp"
-            android:paddingBottom="5dp">
-
-            <CheckBox
-                android:id="@+id/show_hide_password"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/show_pwd"
-                android:textColor="@color/white"
-                android:textSize="14sp"
-                android:visibility="gone" />
-
-            <com.quintus.labs.grocerystore.adapter.customfonts.MyTextViewMeriendaRegular
-                android:id="@+id/forgot_password"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="end"
-                android:padding="5dp"
-                android:text="@string/forgot"
-                android:textColor="@color/agendacolor"
-                android:textSize="14sp" />
-        </LinearLayout>
-
-        <Button
-            android:id="@+id/loginBtn"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="3dp"
-            android:background="@drawable/loginbutton_selector"
-            android:padding="3dp"
-            android:text="@string/login"
-            android:textColor="@color/white"
-            android:textSize="17sp"
-            android:textStyle="bold" />
-    </LinearLayout>
-
-    <com.quintus.labs.grocerystore.adapter.customfonts.MyTextView
-        android:id="@+id/createAccount"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/login_layout"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="15dp"
-        android:gravity="center"
-        android:padding="5dp"
-        android:text="@string/newUser"
-        android:textColor="@color/color"
-        android:textSize="15sp" />
-
-    <include
-        android:id="@+id/progress_bar"
-        layout="@layout/progressbar"
-        android:visibility="gone" />
-</RelativeLayout>
+    private void showProgressDialog() {
+        progress.setVisibility(View.VISIBLE);
+    }
+}
