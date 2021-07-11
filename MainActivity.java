@@ -87,23 +87,9 @@ public class MainActivity extends BaseActivity
     }
 
 
-
-    /*public void toggleCommunicationGroup(View button) {
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
-        MenuItem group = navigationView.getMenu().findItem(R.id.nav_communication_group);
-        boolean isVisible = group.isVisible();
-        group.setVisible(!isVisible);
-        Button toggleButton = (Button)findViewById(R.id.main_toggle_button);
-        if (isVisible) {
-            toggleButton.setText("Enable communication group");
-        } else {
-            toggleButton.setText("Disable communication group");
-        }
-    }*/
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
+       
         getMenuInflater().inflate(R.menu.main, menu);
         MenuItem menuItem = menu.findItem(R.id.cart_action);
         menuItem.setIcon(Converter.convertLayoutToImage(MainActivity.this, cart_count, R.drawable.ic_shopping_basket));
@@ -127,13 +113,13 @@ public class MainActivity extends BaseActivity
             searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
                 @Override
                 public boolean onQueryTextSubmit(String query) {
-                    // Toast like print
+                 
                     return false;
                 }
 
                 @Override
                 public boolean onQueryTextChange(String s) {
-                    // UserFeedback.show( "SearchOnQueryTextChanged: " + s);
+                 
                     if (s.length() == 0) {
                         recyclerView.setVisibility(View.GONE);
                         productList = new ArrayList<>();
@@ -261,7 +247,7 @@ public class MainActivity extends BaseActivity
                 startActivity(new Intent(getApplicationContext(), LoginRegisterActivity.class));
                 finish();
                 overridePendingTransition(R.anim.slide_from_left, R.anim.slide_to_right);
-                // Toast.makeText(getApplicationContext(), "Logout", Toast.LENGTH_LONG).show();
+               
             }
         });
 
@@ -270,10 +256,9 @@ public class MainActivity extends BaseActivity
 
     private void displaySelectedScreen(int itemId) {
 
-        //creating fragment object
+     
         Fragment fragment = null;
 
-        //initializing the fragment object which is selected
         switch (itemId) {
             case R.id.nav_home:
                 fragment = new HomeFragment();
@@ -299,7 +284,7 @@ public class MainActivity extends BaseActivity
 
         }
 
-        //replacing the fragment
+      
         if (fragment != null) {
             FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
             ft.setCustomAnimations(R.anim.slide_from_right, R.anim.slide_to_left);
